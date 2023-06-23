@@ -123,10 +123,17 @@ summary(features)
 
 ### Sample size determination
 
-```{r warning=FALSE}
+```{r eval=FALSE, include=TRUE}
 output = samplesize(features=features, 
                     method="HCT", m=c(5,10,length(features$features)), effectsize=NULL, 
                     class.prob = NULL, totalnum_features = NULL, threshold=0.1, metric="MCC")
+```
+
+```{r include=FALSE}
+output = readRDS(system.file("extdata", "output.rds", package = "planningML"))
+```
+
+```{r}
 head(output$outtable)
 ```
 

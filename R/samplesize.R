@@ -4,6 +4,7 @@
 #'
 #'
 #' @param features feature selection results from the featureselection function in the package.
+#' @param sample.size sample size grid
 #' @param method default is HCT method, sample size dependent performance metric based on HCT method (HCT) or DS method (DS).
 #' @param m the number of features involved in the sample size determination. Default is NULL, which means
 #'          the number of features are determined by the featureselection results based on the iHCT method.
@@ -18,35 +19,40 @@
 #'               can be AUC.
 #' @param target target MCC/AUC that you want to achieve
 #' @return \code{samplesize()} returns sample size needed to achieve corresponding performance measurements.
-#' @import tidyverse caret lubridate
+#' @import caret lubridate
 #' @importFrom MESS auc
 #' @importFrom stats cor pnorm pt qnorm qt quantile rbeta rnorm runif sd var
 #'
 #' @examples
 #' # first compute the results of featureselection function:
 #' ## load data
+#' ## Please be noted that the "pilot_sub.rds" dataset is only include 500 features out
+#' ## of 10108 features of the whole dataset.
+#' ## It is created for R package testing only. To access the full dataset, please use the
+#' ##"pilotdata.rds" instead.
+#'
 #' pilot.data = readRDS(system.file("extdata", "pilotdata_sub.rds", package = "planningML"))
 #' x = pilot.data[,-ncol(pilot.data)]
 #' y = pilot.data$DEPRESSION
 #'
-#' ## select important features
-#' features = featureselection(x = x, y = y)
+#' # select important features
+#' # features = featureselection(x = x, y = y)
 #'
-#' ## determine sample size
-#' if (identical(features$index, integer(0))){
-#'    output = samplesize(features=features,
-#'                   method="HCT", m=c(5,10,length(features$features)),
-#'                    effectsize=NULL, class.prob = NULL, totalnum_features = NULL,
-#'                    threshold=0.1, metric="MCC", target = NULL)
-#'    output
-#'    summary(output)
-#'    plot(output) # Plot sample size dependent AUC or MCC based on number of selected features
+#' # determine sample size
+#'
+#'    #output = samplesize(features=features,
+#'    #               method="HCT", m=length(features$features),
+#'    #               effectsize=NULL, class.prob = NULL, totalnum_features = NULL,
+#'    #               threshold=0.1, metric="MCC", target = NULL)
+#'    #output
+#'    #summary(output)
+#'    #plot(output) # Plot sample size dependent AUC or MCC based on number of selected features
 #' }
 #'
 #' @export
 
 
-samplesize = function(features = NULL,
+samplesize = function(features = NULL,sample.size=seq(10,1000,20),
                       method="HCT", m=NULL, effectsize=NULL, class.prob = NULL, totalnum_features = NULL,
                       threshold=0.1, metric="MCC", target = NULL){
 
@@ -56,35 +62,14 @@ samplesize = function(features = NULL,
     y = features$y
     pilot.data = features$data
     index = features$index
+    selectnum = features$selectnum
     selected_features = features$features
 
-    #Create pilot data for selected features
-    pilot.data.selected<-pilot.data[,c(index,ncol(pilot.data))]
-
-    #Create delta pilot
-    if(length(selected_features) == 1){
-      effect_size_pilot<- apply(pilot.data.selected[,selected_features,drop=F] , 2, function(x)
-        abs(mean(x[which(pilot.data.selected[,ncol(pilot.data.selected)] == 0)]) - mean(x[which(pilot.data.selected[,ncol(pilot.data.selected)] == 1)])))
-    } else {
-      effect_size_pilot<- apply(pilot.data.selected[,selected_features] , 2, function(x)
-        abs(mean(x[which(pilot.data.selected[,ncol(pilot.data.selected)] == 0)]) - mean(x[which(pilot.data.selected[,ncol(pilot.data.selected)] == 1)])))
-    }
-    delta.pilot = effect_size_pilot/2
+    delta.pilot = features$delta.pilot
 
 
   } else {
-    # if (method == "HCT"){
-    #   if (is.null(effectsize) | is.null(class.prob) | is.null(totalnum_features)){
-    #     return("Warning: HCT method should have nonnull values in effectsize, class.prob and totalnum_features.")
-    #   }
-    # }
-    # if (method == "DS"){
-    #   if (is.null(x) | is.null(y) | is.null(selected_features)){
-    #     return("Warning: the input information is not complete!")
-    #   }
-    #   pilot.data = x
-    #   pilot.data[,ncol(pilot.data)+1] = y
-    #   index = match(selected_features,colnames(pilot.data))
+
     if (method != "HCT"){
       warning("Sample size determination method must be HCT if the feature selection step is skipped!")
     }
@@ -163,7 +148,7 @@ samplesize = function(features = NULL,
     # load_all()
     eigen.value =1
 
-    sample.size <- k <- seq(10,1000,20)
+    k <- sample.size
 
     if (metric=="MCC"){
       MCC.mn<-matrix(NA, nrow= length(k), ncol=length(m), byrow= TRUE)
@@ -266,7 +251,7 @@ samplesize = function(features = NULL,
 
     # Calculate HCT_PCC and FScore for different choices of m and n
     N=1000
-    sample.size <- seq(10,1000,20)
+    #sample.size <- seq(10,1000,20) # sample size determined by user?
     imp.features <- m
     # imp.features <- c(5,10,20,length(index))
     if (is.null(totalnum_features)){
@@ -275,10 +260,7 @@ samplesize = function(features = NULL,
       num_features = totalnum_features
     }
 
-    PCC.HCT.simulation.mean<-matrix(NA,ncol= length(imp.features), nrow= length(sample.size), byrow=TRUE)
-    FScore.HCT.simulation.mean<-matrix(NA,ncol= length(imp.features), nrow= length(sample.size), byrow=TRUE)
     AUC.HCT.simulation.mean<-matrix(NA,ncol= length(imp.features), nrow= length(sample.size), byrow=TRUE)
-    #AUPRC.HCT.simulation.mean<-matrix(NA,ncol= length(imp.features), nrow= length(sample.size), byrow=TRUE)
     MCC.HCT.simulation.mean<-matrix(NA,ncol= length(imp.features), nrow= length(sample.size), byrow=TRUE)
     for(j in 1: length(sample.size))
     {
@@ -287,10 +269,7 @@ samplesize = function(features = NULL,
 
         calc_score <-replicate(N, HCT.simulation(n=sample.size[j],m=imp.features[k],p=num_features,
                                                  delta.pilot=delta.pilot,class.prob=class.prob), simplify=FALSE)
-        # PCC.HCT.simulation.mean[j,k] = mean(sapply(calc_score, "[[",1),na.rm=TRUE)
-        # FScore.HCT.simulation.mean[j,k] = mean(sapply(calc_score, "[[",2),na.rm=TRUE)
         AUC.HCT.simulation.mean[j,k] = mean(sapply(calc_score, "[[",3),na.rm=TRUE)
-        #AUPRC.HCT.simulation.mean[j,k] = mean(sapply(calc_score, "[[",4),na.rm=TRUE)
         MCC.HCT.simulation.mean[j,k] = mean(sapply(calc_score, "[[",4),na.rm=TRUE)
       }
     }

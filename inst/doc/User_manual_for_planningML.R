@@ -31,10 +31,15 @@ features = readRDS(system.file("extdata", "features.rds", package = "planningML"
 ## -----------------------------------------------------------------------------
 summary(features)
 
-## ----warning=FALSE------------------------------------------------------------
-output = samplesize(features=features, 
-                    method="HCT", m=c(5,10,length(features$features)), effectsize=NULL, 
-                    class.prob = NULL, totalnum_features = NULL, threshold=0.1, metric="MCC")
+## ----eval=FALSE, include=TRUE-------------------------------------------------
+#  output = samplesize(features=features,
+#                      method="HCT", m=c(5,10,length(features$features)), effectsize=NULL,
+#                      class.prob = NULL, totalnum_features = NULL, threshold=0.1, metric="MCC")
+
+## ----include=FALSE------------------------------------------------------------
+output = readRDS(system.file("extdata", "output.rds", package = "planningML"))
+
+## -----------------------------------------------------------------------------
 head(output$outtable)
 
 ## -----------------------------------------------------------------------------

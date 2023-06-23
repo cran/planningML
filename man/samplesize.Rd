@@ -6,6 +6,7 @@
 \usage{
 samplesize(
   features = NULL,
+  sample.size = seq(10, 1000, 20),
   method = "HCT",
   m = NULL,
   effectsize = NULL,
@@ -18,6 +19,8 @@ samplesize(
 }
 \arguments{
 \item{features}{feature selection results from the featureselection function in the package.}
+
+\item{sample.size}{sample size grid}
 
 \item{method}{default is HCT method, sample size dependent performance metric based on HCT method (HCT) or DS method (DS).}
 
@@ -45,26 +48,4 @@ can be AUC.}
 }
 \description{
 This function determine the optimal sample size based on the performance evaluation metric and number of selected features.
-}
-\examples{
-# first compute the results of featureselection function:
-## load data
-pilot.data = readRDS(system.file("extdata", "pilotdata_sub.rds", package = "planningML"))
-x = pilot.data[,-ncol(pilot.data)]
-y = pilot.data$DEPRESSION
-
-## select important features
-features = featureselection(x = x, y = y)
-
-## determine sample size
-if (identical(features$index, integer(0))){
-   output = samplesize(features=features,
-                  method="HCT", m=c(5,10,length(features$features)),
-                   effectsize=NULL, class.prob = NULL, totalnum_features = NULL,
-                   threshold=0.1, metric="MCC", target = NULL)
-   output
-   summary(output)
-   plot(output) # Plot sample size dependent AUC or MCC based on number of selected features
-}
-
 }

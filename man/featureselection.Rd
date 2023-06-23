@@ -22,12 +22,12 @@ This function selects important features from the dataset
 \examples{
 
 ## load data
-pilot.data = readRDS(system.file("extdata", "pilotdata_sub.rds", package = "planningML"))
-x = pilot.data[,-ncol(pilot.data)]
-y = pilot.data$DEPRESSION
+#pilot.data = readRDS(system.file("extdata", "pilotdata.rds", package = "planningML"))
+#x = pilot.data[,-ncol(pilot.data)]
+#y = pilot.data$DEPRESSION
 
 ## select important features
-features = featureselection(x = x, y = y)
-summary(features)
+#features = featureselection(x = x, y = y)
+#summary(features)
 
 }
